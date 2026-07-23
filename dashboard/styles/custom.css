@@ -54,26 +54,48 @@ html, body, [class*="css"] {
     background-attachment: fixed !important;
 }
 
-/* Full-Width Executive Dashboard Canvas Layout */
-.main .block-container,
-div[data-testid="stAppViewBlockContainer"] {
-    max-width: 96% !important;
-    width: 96% !important;
-    padding-top: 1.5rem !important;
-    padding-bottom: 2rem !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
-}
-
+/* ==========================================================================
+   ENTERPRISE 100% FULL-BLEED WIDESCREEN DASHBOARD CANVAS
+   ========================================================================== */
 html, body {
-    font-size: 16px !important;
-    zoom: 1 !important;
-    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
-/* Hide Default Streamlit Header Decoration */
+.stApp,
+[data-testid="stAppViewContainer"],
+section.main {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.stAppViewContainer section.main,
+.stMainBlockContainer,
+.block-container,
+div[data-testid="stMainBlockContainer"],
+div[data-testid="stAppViewBlockContainer"],
+section.main .block-container,
+div.stMainBlockContainer,
+.main .block-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-top: 1rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 1.25rem !important;
+    padding-right: 1.25rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Hide Default Streamlit Header Decoration & Zero Height */
+div[data-testid="stHeader"],
 header[data-testid="stHeader"] {
     background: transparent !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
 }
 
 /* Hide Default Streamlit Navigation Group Title ("app") Completely */
@@ -164,6 +186,7 @@ section[data-testid="stSidebar"] .stRadio label:hover {
     box-shadow: var(--shadow-main);
     margin-bottom: 2rem;
     border: 1px solid rgba(149, 186, 254, 0.2);
+    width: 100%;
 }
 
 .hero-banner::after {
