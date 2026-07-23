@@ -22,7 +22,6 @@ CALORIES_BURNED_EXCLUDE = [
 
 REQUIRED_CALORIES_EXCLUDE = [
     "required_calories",
-    "calories_burned",
     "BMR",
     "TDEE",
     "activity_factor",
