@@ -95,37 +95,52 @@ def render_feature_card(title, description, icon="🚀"):
     """).strip()
     st.markdown(html, unsafe_allow_html=True)
 
-def render_model_card(model_name, r2_score, mae_score, rmse_score, is_best=False):
-    """Renders a responsive model evaluation metric summary card with 22px gradient border."""
-    badge = '<span style="background:rgba(204,254,216,0.2); color:#CCFED8; border:1px solid #CCFED8; border-radius:12px; padding:3px 10px; font-size:0.75rem; font-weight:700; white-space:nowrap;">★ BEST MODEL</span>' if is_best else ''
-    
+from dashboard.utils.preprocessing import safe_get_metric
+
+def render_model_summary_card(model_name, metrics, is_best=False):
+    """
+    Dynamically renders a model metric summary card for any estimator (Linear Regression, Random Forest, XGBoost).
+    Safely extracts test_r2, test_mae, and test_rmse without raw HTML code block artifacts.
+    """
+    if not isinstance(metrics, dict):
+        metrics = {}
+        
+    r2_score = safe_get_metric(metrics, "test_r2", default="N/A")
+    mae_score = safe_get_metric(metrics, "test_mae", default="N/A")
+    rmse_score = safe_get_metric(metrics, "test_rmse", default="N/A")
+
     r2_str = f"{r2_score:.4f}" if isinstance(r2_score, (int, float)) else str(r2_score)
     mae_str = f"{mae_score:.2f}" if isinstance(mae_score, (int, float)) else str(mae_score)
     rmse_str = f"{rmse_score:.2f}" if isinstance(rmse_score, (int, float)) else str(rmse_score)
 
-    html = textwrap.dedent(f"""
-        <div class="kpi-card" style="margin-bottom:1.25rem;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem; flex-wrap:nowrap; gap:8px;">
-                <div style="font-size:1.1rem; font-weight:800; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{model_name}</div>
-                {badge}
-            </div>
-            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; text-align:center;">
-                <div style="background:rgba(15,28,48,0.7); padding:8px 4px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size:0.72rem; color:#B8C7D9; font-weight:600; white-space:nowrap;">R² Score</div>
-                    <div style="font-size:1.15rem; font-weight:800; color:#95BAFE; white-space:nowrap; margin-top:2px;">{r2_str}</div>
-                </div>
-                <div style="background:rgba(15,28,48,0.7); padding:8px 4px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size:0.72rem; color:#B8C7D9; font-weight:600; white-space:nowrap;">MAE (kcal)</div>
-                    <div style="font-size:1.15rem; font-weight:800; color:#CCFED8; white-space:nowrap; margin-top:2px;">{mae_str}</div>
-                </div>
-                <div style="background:rgba(15,28,48,0.7); padding:8px 4px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size:0.72rem; color:#B8C7D9; font-weight:600; white-space:nowrap;">RMSE (kcal)</div>
-                    <div style="font-size:1.15rem; font-weight:800; color:#489CE2; white-space:nowrap; margin-top:2px;">{rmse_str}</div>
-                </div>
-            </div>
-        </div>
-    """).strip()
+    badge_html = '<span style="background:rgba(204,254,216,0.2); color:#CCFED8; border:1px solid #CCFED8; border-radius:12px; padding:3px 10px; font-size:0.75rem; font-weight:700; white-space:nowrap;">★ BEST MODEL</span>' if is_best else ''
+
+    html = f"""<div class="kpi-card" style="margin-bottom:1.25rem;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem; flex-wrap:nowrap; gap:8px;">
+<div style="font-size:1.1rem; font-weight:800; color:#FFFFFF; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{model_name}</div>
+{badge_html}
+</div>
+<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; text-align:center;">
+<div style="background:rgba(15,28,48,0.7); padding:8px 4px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+<div style="font-size:0.72rem; color:#B8C7D9; font-weight:600; white-space:nowrap;">R² Score</div>
+<div style="font-size:1.15rem; font-weight:800; color:#95BAFE; white-space:nowrap; margin-top:2px;">{r2_str}</div>
+</div>
+<div style="background:rgba(15,28,48,0.7); padding:8px 4px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+<div style="font-size:0.72rem; color:#B8C7D9; font-weight:600; white-space:nowrap;">MAE (kcal)</div>
+<div style="font-size:1.15rem; font-weight:800; color:#CCFED8; white-space:nowrap; margin-top:2px;">{mae_str}</div>
+</div>
+<div style="background:rgba(15,28,48,0.7); padding:8px 4px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+<div style="font-size:0.72rem; color:#B8C7D9; font-weight:600; white-space:nowrap;">RMSE (kcal)</div>
+<div style="font-size:1.15rem; font-weight:800; color:#489CE2; white-space:nowrap; margin-top:2px;">{rmse_str}</div>
+</div>
+</div>
+</div>"""
     st.markdown(html, unsafe_allow_html=True)
+
+def render_model_card(model_name, r2_score, mae_score, rmse_score, is_best=False):
+    """API Adapter for render_model_card."""
+    metrics = {"test_r2": r2_score, "test_mae": mae_score, "test_rmse": rmse_score}
+    render_model_summary_card(model_name, metrics, is_best=is_best)
 
 def render_section_title(title, subtitle=None, icon="📌"):
     """Renders a section title with optional subtitle."""

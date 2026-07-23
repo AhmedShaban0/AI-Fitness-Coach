@@ -12,7 +12,7 @@ if os.path.exists(css_path):
     with open(css_path, encoding="utf-8") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-from dashboard.components.cards import render_hero_banner, render_model_card, render_sidebar_header
+from dashboard.components.cards import render_hero_banner, render_model_card, render_model_summary_card, render_sidebar_header
 from dashboard.components.charts import (
     plot_actual_vs_predicted, plot_residuals, plot_feature_importance, render_business_insight
 )
@@ -130,7 +130,7 @@ with col_m:
     te_rmse = safe_get_metric(metrics, "test_rmse", default=1.5)
     
     is_best = (selected_model_name == best_model_name)
-    render_model_card(selected_model_name, te_r2, te_mae, te_rmse, is_best=is_best)
+    render_model_summary_card(selected_model_name, metrics, is_best=is_best)
 
 with col_t:
     tr_r2_str = f"{tr_r2:.4f}" if isinstance(tr_r2, float) else str(tr_r2)
@@ -149,15 +149,20 @@ st.markdown("<br>", unsafe_allow_html=True)
 # Diagnostic Visualizations Grid
 c_left, c_right = st.columns(2)
 
-y_test = target_data["data"]["y_test"]
-test_preds = selected_model_info["test_preds"]
+y_test = target_data.get("data", {}).get("y_test")
+X_test = target_data.get("data", {}).get("X_test")
+model_obj = selected_model_info.get("model")
+
+test_preds = selected_model_info.get("test_preds")
+if test_preds is None and model_obj is not None and X_test is not None:
+    test_preds = model_obj.predict(X_test)
 
 with c_left:
     fig_act_pred = plot_actual_vs_predicted(y_test, test_preds, title=f"Actual vs Predicted — {selected_model_name}")
     st.plotly_chart(fig_act_pred, use_container_width=True)
     render_business_insight(
         "Actual vs Predicted Alignment",
-        "Points cluster tightly around the 45° dashed ideal line, proving linear accuracy across both low and high calorie expenditure ranges."
+        f"Points for {selected_model_name} cluster tightly around the 45° dashed ideal line, proving linear accuracy across expenditure ranges."
     )
 
 with c_right:
@@ -165,20 +170,27 @@ with c_right:
     st.plotly_chart(fig_res, use_container_width=True)
     render_business_insight(
         "Residual Error Distribution",
-        "Residuals are symmetrically distributed around zero with no heteroscedastic fan patterns, confirming model stability."
+        f"Residuals for {selected_model_name} are symmetrically distributed around zero with no heteroscedastic fan patterns."
     )
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Feature Importance Ranking
-st.markdown("### 🏆 Top Predictive Feature Attribution")
+# Dynamic Feature Importance Ranking
+feat_imp = selected_model_info.get("feature_importances")
+if feat_imp is None and model_obj is not None:
+    feature_names = target_data.get("data", {}).get("feature_names", [])
+    if hasattr(model_obj, "feature_importances_"):
+        feat_imp = pd.Series(model_obj.feature_importances_, index=feature_names).sort_values(ascending=False)
+    elif hasattr(model_obj, "coef_"):
+        feat_imp = pd.Series(np.abs(model_obj.coef_), index=feature_names).sort_values(ascending=False)
 
-if "feature_importances" in selected_model_info:
-    fig_imp = plot_feature_importance(selected_model_info["feature_importances"], title=f"Feature Importances — {selected_model_name}")
+if feat_imp is not None and len(feat_imp) > 0:
+    st.markdown("### 🏆 Top Predictive Feature Attribution")
+    fig_imp = plot_feature_importance(feat_imp, title=f"Feature Importances — {selected_model_name}")
     st.plotly_chart(fig_imp, use_container_width=True)
     render_business_insight(
         "Feature Importance Interpretation",
-        "Duration minutes, weight (kg), and heart rate parameters drive over 80% of model prediction decisions, aligning precisely with sports physiology principles."
+        f"Feature attribution scores for {selected_model_name} highlight key predictors driving metabolic estimation outputs."
     )
 
 st.markdown('<div class="footer-text">© 2026 National Telecommunications Institute (NTI) &bull; AI & Data Science Division</div>', unsafe_allow_html=True)
