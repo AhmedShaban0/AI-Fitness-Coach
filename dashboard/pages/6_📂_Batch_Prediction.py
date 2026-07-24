@@ -90,6 +90,11 @@ if uploaded_file is not None:
             if "bmi" not in proc_df.columns and "weight_kg" in proc_df.columns and "height_cm" in proc_df.columns:
                 proc_df["bmi"] = proc_df["weight_kg"] / ((proc_df["height_cm"] / 100) ** 2)
 
+            # Calculate calories_burned for required_calories target if missing in uploaded CSV
+            if "calories_burned" not in proc_df.columns:
+                from dashboard.utils.data_loader import calculate_calories
+                proc_df["calories_burned"] = proc_df.apply(calculate_calories, axis=1)
+
             # Column Schema Aliases
             if "duration_minutes" in proc_df.columns and "duration_min" not in proc_df.columns:
                 proc_df["duration_min"] = proc_df["duration_minutes"]

@@ -187,15 +187,14 @@ with col_right:
             "fitness_level": 0.5
         }
 
+        # Calculate calories_burned for required_calories target if needed
+        from dashboard.utils.data_loader import calculate_calories
+        calculated_burn = calculate_calories(input_dict)
+        input_dict["calories_burned"] = calculated_burn
+
         input_df = pd.DataFrame([input_dict])
 
-        # Debug Logging for Pipeline Inspection (Requirement 2)
-        print("=== Preprocessing Pipeline Audit ===")
-        print("Raw input_df.columns:", list(input_df.columns))
-        print("Raw input_df.dtypes:\n", input_df.dtypes)
-        print("num_cols from training:", num_cols)
-
-        # 1. Categorical Encoding Step (Saved LabelEncoders)
+        # 1. Categorical Encoding Step (Target-Specific LabelEncoders)
         for col in list(input_df.columns):
             if col in encoders:
                 enc = encoders[col]
@@ -218,8 +217,6 @@ with col_right:
             if input_df[col].dtype == "object" or isinstance(input_df[col].iloc[0], str):
                 input_df[col] = pd.to_numeric(input_df[col], errors="coerce").fillna(0.0)
 
-        print("Post-encoding input_df.dtypes:\n", input_df.dtypes)
-
         # 2. Verify num_cols contains ONLY numeric columns before scaling
         valid_num_cols = [c for c in num_cols if c in input_df.columns]
         non_num_in_num_cols = input_df[valid_num_cols].select_dtypes(include=["object", "string"]).columns.tolist()
@@ -228,11 +225,11 @@ with col_right:
             st.warning(f"⚠️ Preprocessing Pipeline Alert: Non-numeric column(s) {non_num_in_num_cols} detected before numerical scaling step.")
             predicted_val = 0.0
         else:
-            # 3. Numeric Scaling (StandardScaler)
+            # 3. Numeric Scaling (Target-Specific StandardScaler)
             if scaler is not None and valid_num_cols:
                 input_df[valid_num_cols] = scaler.transform(input_df[valid_num_cols])
 
-            # 4. Feature Alignment to Exact Training Order
+            # 4. Feature Alignment to Exact Target Training Order
             missing_feats = [f for f in feature_names if f not in input_df.columns]
             for mf in missing_feats:
                 input_df[mf] = 0.0
